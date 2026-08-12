@@ -7,3 +7,8 @@ node_modules/
 Thumbs.db
 .vscode/
 .idea/
+public/
+.wrangler/
+.dev.vars
+.wrangler/
+migrations/0002_seed_faq.sql

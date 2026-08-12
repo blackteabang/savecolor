@@ -2,33 +2,83 @@
 
 색각이상 인식 개선과 다름색 설립 지지를 위한 웹사이트입니다.
 
-## 구성
+## 구성 (권장)
 
-- **화면**: GitHub Pages (정적) 또는 로컬 Express
-- **API 서버**: Express (`server.js`)
-- **저장소**: MySQL/MariaDB (`signatures`, `support_comments`)
-- **FAQ**: `faq.json` 파일
+- **호스팅**: Cloudflare Pages (정적 + Functions)
+- **DB**: Cloudflare D1 (`signatures`, `support_comments`, `faq`)
+- **API**: `functions/api/[[path]].js` → `/api/*`
 
-## 공개 주소 (Cloudflare Tunnel)
+## Cloudflare 배포
 
-- https://savecolor.jashin.org
-- 이 PC의 Express(`localhost:7749`) + MySQL을 Cloudflare Tunnel로 공개합니다.
-- 터널 설정: `%USERPROFILE%\.cloudflared\savecolor-config.yml`
-- 터널 시작: `%USERPROFILE%\.cloudflared\start-savecolor-tunnel.vbs`
+### 1) 준비
 
-### DNS (jashin.org Cloudflare 대시보드)
+```bash
+npm install
+npx wrangler login
+```
 
-`cloudflared` 인증서가 `refurbish.co.kr` 계정용이라, `jashin.org` 존에는 아래 레코드를 **직접** 추가해야 합니다.
+### 2) D1 생성 · 마이그레이션 · FAQ 시드
+
+```bash
+npx wrangler d1 create savecolor
+```
+
+출력된 `database_id`를 `wrangler.toml`의 `[[d1_databases]].database_id`에 넣습니다.
+
+```bash
+npm run cf:migrate:remote
+npm run cf:seed:remote
+```
+
+### 3) 시크릿 / 환경변수
+
+Pages 프로젝트에 아래를 설정합니다 (대시보드 또는 CLI).
+
+```bash
+npx wrangler pages secret put ADMIN_PW --project-name=savecolor
+npx wrangler pages secret put ADMIN_TOKEN --project-name=savecolor
+```
+
+`wrangler.toml`의 `[vars]`에 `ADMIN_ID`, `BASE_SIGNATURES`가 있습니다. 필요하면 대시보드에서 덮어쓰세요.
+
+### 4) 배포
+
+```bash
+npm run cf:deploy
+```
+
+배포 후 `config.js`의 `window.API_BASE`는 빈 문자열(`''`)이라 **같은 도메인**의 `/api`를 사용합니다.
+
+### 5) 커스텀 도메인 (`savecolor.org`)
+
+Pages에 `savecolor.org` / `www.savecolor.org` 를 연결한 뒤, DNS(존 `savecolor.org`)에 proxied CNAME을 둡니다.
 
 | Type | Name | Target | Proxy |
 |------|------|--------|-------|
-| CNAME | `savecolor` | `a79eadcb-7df0-4d69-bb73-5157ab862769.cfargotunnel.com` | Proxied (주황 구름) |
+| CNAME | `@` | `savecolor.pages.dev` | Proxied |
+| CNAME | `www` | `savecolor.pages.dev` | Proxied |
 
-추가 후 https://savecolor.jashin.org 로 접속하면 됩니다.
+대시보드: [Pages domains](https://dash.cloudflare.com/7116b107cc1e5d0daaa486106e41bf75/pages/view/savecolor) · [DNS](https://dash.cloudflare.com/7116b107cc1e5d0daaa486106e41bf75/eba910ec1d25fd70bd4a19fdae8ee31b/dns/records)
 
-`config.js`의 `window.API_BASE`는 이미 이 주소로 설정되어 있어, GitHub Pages에서도 같은 API를 사용합니다.
+API 토큰(`Zone:DNS:Edit`)이 있으면:
 
-## 로컬 실행
+```bash
+export CLOUDFLARE_API_TOKEN=...
+node scripts/setup-savecolor-dns.js
+```
+
+
+### 로컬 Pages + D1
+
+```bash
+npm run cf:migrate:local
+npm run cf:seed:local
+npm run cf:dev
+```
+
+## 로컬 Express + MySQL (대안)
+
+PC + Cloudflare Tunnel 방식으로 돌릴 때:
 
 ```bash
 cp .env.example .env
@@ -38,15 +88,10 @@ npm start
 ```
 
 - 사이트: http://localhost:7749
-- 관리자: http://localhost:7749/admin
+- 터널: `%USERPROFILE%\.cloudflared\start-savecolor-tunnel.vbs`
+- 이 모드에서는 `config.js`에 `window.API_BASE = 'https://savecolor.org'` 를 넣으세요.
 
-`.env`에 MySQL 접속 정보(`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`)를 넣어야 합니다.
+## 관리자
 
-## API 서버 배포 (Render 등)
-
-Render 등에 배포할 때도 MySQL(또는 호환 DB)이 필요합니다.  
-배포 후 발급된 API 주소를 `config.js`에 넣으세요.
-
-```js
-window.API_BASE = 'https://your-api.onrender.com';
-```
+- 경로: `/admin`
+- 기본 계정: `.env` / Pages secrets의 `ADMIN_ID` / `ADMIN_PW`

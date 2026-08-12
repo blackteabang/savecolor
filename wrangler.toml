@@ -1,0 +1,15 @@
+name = "savecolor"
+compatibility_date = "2024-11-12"
+pages_build_output_dir = "public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "savecolor"
+database_id = "3cbc7a9a-11c3-45b8-8aca-e20146a2ee49"
+preview_database_id = "3cbc7a9a-11c3-45b8-8aca-e20146a2ee49"
+
+[vars]
+BASE_SIGNATURES = "50"
+ADMIN_ID = "admin"
+# Set secrets in Cloudflare dashboard / `wrangler pages secret put`:
+# ADMIN_PW, ADMIN_TOKEN

@@ -1,11 +1,18 @@
 {
   "name": "savecolor",
   "version": "1.0.0",
-  "description": "다름색 웹사이트 - Express + MySQL",
+  "description": "다름색 웹사이트 - Cloudflare Pages + D1",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "setup": "node setup-db.js"
+    "setup": "node setup-db.js",
+    "build:pages": "node scripts/build-pages.js",
+    "cf:dev": "npm run build:pages && wrangler pages dev public --d1=DB=savecolor",
+    "cf:migrate:local": "wrangler d1 execute savecolor --local --file=./migrations/0001_init.sql",
+    "cf:migrate:remote": "wrangler d1 execute savecolor --remote --file=./migrations/0001_init.sql",
+    "cf:seed:local": "node scripts/seed-faq-sql.js > ./migrations/0002_seed_faq.sql && wrangler d1 execute savecolor --local --file=./migrations/0002_seed_faq.sql",
+    "cf:seed:remote": "node scripts/seed-faq-sql.js > ./migrations/0002_seed_faq.sql && wrangler d1 execute savecolor --remote --file=./migrations/0002_seed_faq.sql",
+    "cf:deploy": "npm run build:pages && wrangler pages deploy public --project-name=savecolor"
   },
   "keywords": [],
   "author": "",
@@ -16,5 +23,8 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "mysql2": "^3.22.5"
+  },
+  "devDependencies": {
+    "wrangler": "^4.121.0"
   }
 }
