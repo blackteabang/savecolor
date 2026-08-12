@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>다름색 - 모두가 같은 기회를 누리는 세상</title>
+    <!-- API 서버 주소 설정 -->
+    <script src="config.js"></script>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js CDN -->
@@ -731,17 +733,31 @@
         const LOCAL_KEYS = { signatures: 'dareum-local-signatures', comments: 'dareum-local-comments' };
         const LOCAL_LIKES_KEY = 'dareum-local-likes';
         const STATIC_NOTICE = '\n\n※ 현재 페이지는 서버 없이 동작하는 공개 데모라, 입력하신 내용은 이 브라우저에만 임시로 저장됩니다.';
-        let apiAvailable = null;
+        let apiCheckPromise = null;
 
-        async function isApiAvailable() {
-            if (apiAvailable !== null) return apiAvailable;
+        async function pingApi(timeoutMs) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
             try {
-                const response = await fetch(apiUrl('/api/signatures/count'), { cache: 'no-store' });
-                apiAvailable = response.ok;
+                const response = await fetch(apiUrl('/api/health'), { cache: 'no-store', signal: controller.signal });
+                return response.ok;
             } catch (error) {
-                apiAvailable = false;
+                return false;
+            } finally {
+                clearTimeout(timer);
             }
-            return apiAvailable;
+        }
+
+        async function probeApi() {
+            if (!API_BASE && location.hostname.endsWith('github.io')) return false;
+            // 무료 호스팅은 첫 요청에서 서버가 깨어나느라 오래 걸릴 수 있습니다.
+            if (await pingApi(4000)) return true;
+            return pingApi(60000);
+        }
+
+        function isApiAvailable() {
+            if (!apiCheckPromise) apiCheckPromise = probeApi();
+            return apiCheckPromise;
         }
 
         function readLocal(key) {
@@ -951,7 +967,7 @@
             }
 
             try {
-                const response = await fetch(`${API_BASE}/api/signatures`, {
+                const response = await fetch(apiUrl('/api/signatures'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, email, agreed })
@@ -1003,13 +1019,15 @@
 
         async function fetchSignatureCount() {
             try {
-                const response = await fetch(`${API_BASE}/api/signatures/count`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.count) {
-                        signatureCount = data.count;
-                        updateProgress();
-                        return;
+                if (await isApiAvailable()) {
+                    const response = await fetch(apiUrl('/api/signatures/count'), { cache: 'no-store' });
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.count) {
+                            signatureCount = data.count;
+                            updateProgress();
+                            return;
+                        }
                     }
                 }
             } catch (error) {
@@ -1090,8 +1108,10 @@
             try {
                 let items = null;
                 try {
-                    const apiRes = await fetch(apiUrl('/api/faq'));
-                    if (apiRes.ok) items = await apiRes.json();
+                    if (await isApiAvailable()) {
+                        const apiRes = await fetch(apiUrl('/api/faq'), { cache: 'no-store' });
+                        if (apiRes.ok) items = await apiRes.json();
+                    }
                 } catch (_) { /* GitHub Pages 등 API 없는 환경 */ }
                 if (!Array.isArray(items)) {
                     let fileRes = await fetch(assetUrl('data/faq.json'));
@@ -1307,7 +1327,7 @@
             }
 
             try {
-                const response = await fetch(`${API_BASE}/api/comments/${id}/like`, { method: 'POST' });
+                const response = await fetch(apiUrl(`/api/comments/${id}/like`), { method: 'POST' });
                 const data = await response.json();
                 if (!response.ok) {
                     alert(data.error || '공감에 실패했습니다.');
@@ -1325,8 +1345,10 @@
             try {
                 let data = null;
                 try {
-                    const response = await fetch(`${API_BASE}/api/comments`);
-                    if (response.ok) data = await response.json();
+                    if (await isApiAvailable()) {
+                        const response = await fetch(apiUrl('/api/comments'), { cache: 'no-store' });
+                        if (response.ok) data = await response.json();
+                    }
                 } catch (_) { /* Pages 등 API 없는 환경 */ }
                 let fromApi = true;
                 if (!Array.isArray(data)) {
@@ -1388,7 +1410,7 @@
             }
 
             try {
-                const response = await fetch(`${API_BASE}/api/comments`, {
+                const response = await fetch(apiUrl('/api/comments'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, message })
@@ -1413,6 +1435,7 @@
             showTab('당사자');
             drawHeroPattern();
             setTimeout(updateProgress, 500); // Animation delay
+            isApiAvailable(); // 무료 호스팅 서버를 미리 깨워 둡니다.
             fetchSignatureCount();
             loadFaq();
             loadComments();

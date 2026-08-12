@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>다름색 - 관리자</title>
+    <script src="config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css">
     <style>
@@ -197,6 +198,8 @@
         const loginError = document.getElementById('login-error');
         const faqForm = document.getElementById('faq-form');
         const faqFormError = document.getElementById('faq-form-error');
+        const API_BASE = (typeof window.API_BASE === 'string' ? window.API_BASE : '').replace(/\/$/, '');
+        const apiUrl = (path) => `${API_BASE}${path}`;
 
         function getToken() {
             return localStorage.getItem('adminToken');
@@ -235,7 +238,7 @@
             const password = document.getElementById('admin-pw').value;
 
             try {
-                const response = await fetch('/api/admin/login', {
+                const response = await fetch(apiUrl('/api/admin/login'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, password })
@@ -274,7 +277,7 @@
 
         async function fetchSignatures(token) {
             try {
-                const response = await fetch('/api/signatures', {
+                const response = await fetch(apiUrl('/api/signatures'), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (handleUnauthorized(response)) return;
@@ -319,7 +322,7 @@
         async function deleteSignature(id, token) {
             if (!confirm('이 서명을 삭제할까요?')) return;
             try {
-                const response = await fetch(`/api/signatures/${id}`, {
+                const response = await fetch(apiUrl(`/api/signatures/${id}`), {
                     method: 'DELETE',
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -334,7 +337,7 @@
 
         async function fetchFaq(token) {
             try {
-                const response = await fetch('/api/admin/faq', {
+                const response = await fetch(apiUrl('/api/admin/faq'), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (handleUnauthorized(response)) return;
@@ -396,7 +399,7 @@
             };
 
             try {
-                const response = await fetch('/api/admin/faq', {
+                const response = await fetch(apiUrl('/api/admin/faq'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -424,7 +427,7 @@
         async function deleteFaq(id, token) {
             if (!confirm('이 FAQ를 삭제할까요?')) return;
             try {
-                const response = await fetch(`/api/admin/faq/${id}`, {
+                const response = await fetch(apiUrl(`/api/admin/faq/${id}`), {
                     method: 'DELETE',
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -439,7 +442,7 @@
 
         async function fetchComments(token) {
             try {
-                const response = await fetch('/api/comments?limit=100', {
+                const response = await fetch(apiUrl('/api/comments?limit=100'), {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (!response.ok) throw new Error('Failed to fetch comments');
@@ -483,7 +486,7 @@
         async function deleteComment(id, token) {
             if (!confirm('이 지지 한마디를 삭제할까요?')) return;
             try {
-                const response = await fetch(`/api/comments/${id}`, {
+                const response = await fetch(apiUrl(`/api/comments/${id}`), {
                     method: 'DELETE',
                     headers: { Authorization: `Bearer ${token}` }
                 });

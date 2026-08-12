@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: savecolor-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: ADMIN_ID
+        sync: false
+      - key: ADMIN_PW
+        sync: false
+      - key: ADMIN_TOKEN
+        sync: false

@@ -43,6 +43,10 @@ async function getSignatureCount() {
     return meta.baseSignatures + signatures.length;
 }
 
+app.get('/api/health', (req, res) => {
+    res.json({ ok: true, time: new Date().toISOString() });
+});
+
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin.html'));
 });
