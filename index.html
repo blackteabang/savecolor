@@ -937,15 +937,31 @@
         async function fetchSignatureCount() {
             try {
                 const response = await fetch(`${API_BASE}/api/signatures/count`);
-                if(response.ok) {
+                if (response.ok) {
                     const data = await response.json();
                     if (data.count) {
                         signatureCount = data.count;
                         updateProgress();
+                        return;
                     }
                 }
             } catch (error) {
-                console.error('Failed to fetch count:', error);
+                console.error('Failed to fetch count via API:', error);
+            }
+            try {
+                const [metaRes, sigRes] = await Promise.all([
+                    fetch(assetUrl('data/meta.json')),
+                    fetch(assetUrl('data/signatures.json'))
+                ]);
+                if (!metaRes.ok || !sigRes.ok) return;
+                const meta = await metaRes.json();
+                const signatures = await sigRes.json();
+                const base = Number(meta.baseSignatures) || 8421;
+                const extra = Array.isArray(signatures) ? signatures.length : 0;
+                signatureCount = base + extra;
+                updateProgress();
+            } catch (error) {
+                console.error('Failed to fetch count from JSON:', error);
             }
         }
 
@@ -1011,7 +1027,8 @@
                     if (apiRes.ok) items = await apiRes.json();
                 } catch (_) { /* GitHub Pages 등 API 없는 환경 */ }
                 if (!Array.isArray(items)) {
-                    const fileRes = await fetch(assetUrl('faq.json'));
+                    let fileRes = await fetch(assetUrl('data/faq.json'));
+                    if (!fileRes.ok) fileRes = await fetch(assetUrl('faq.json'));
                     if (!fileRes.ok) throw new Error('FAQ load failed');
                     items = await fileRes.json();
                 }
@@ -1222,10 +1239,17 @@
 
         async function loadComments() {
             try {
-                const response = await fetch(`${API_BASE}/api/comments`);
-                if (!response.ok) throw new Error('Failed to load comments');
-                const data = await response.json();
-                renderComments(data);
+                let data = null;
+                try {
+                    const response = await fetch(`${API_BASE}/api/comments`);
+                    if (response.ok) data = await response.json();
+                } catch (_) { /* Pages 등 API 없는 환경 */ }
+                if (!Array.isArray(data)) {
+                    const fileRes = await fetch(assetUrl('data/comments.json'));
+                    if (!fileRes.ok) throw new Error('Failed to load comments');
+                    data = await fileRes.json();
+                }
+                renderComments(Array.isArray(data) ? data : []);
             } catch (error) {
                 console.error('Failed to load comments:', error);
                 const empty = document.getElementById('comment-empty');
