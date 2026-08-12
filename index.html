@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>다름색 - 모두가 같은 기회를 누리는 세상</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts: Pretendard -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css">
+    <style>
+        :root {
+            --primary: #0055AA;
+            --secondary: #FFD700;
+            --dark: #1A1A1A;
+            --light: #F3F4F6;
+        }
+        body { font-family: 'Pretendard', sans-serif; scroll-behavior: smooth; word-break: keep-all; overflow-wrap: break-word; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 260px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container { height: 350px; }
+        }
+        .progress-bar-fill {
+            transition: width 1.5s ease-in-out;
+            background: linear-gradient(90deg, #FFD700, #FFA500);
+        }
+        .guide-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .guide-tab {
+            padding: 0.6rem 1.05rem;
+            border: 1.5px solid #E5E7EB;
+            border-radius: 999px;
+            background: #ffffff;
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #6B7280;
+            line-height: 1.2;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+        }
+        .guide-tab:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .guide-tab.is-active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #ffffff;
+        }
+        @media (min-width: 640px) {
+            .guide-tabs { gap: 0.75rem; }
+            .guide-tab { padding: 0.7rem 1.5rem; font-size: 1rem; }
+        }
+        /* Focus state for accessibility */
+        a:focus, button:focus, input:focus {
+            outline: 3px solid var(--secondary);
+            outline-offset: 2px;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--light); }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+        .faq-cats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem 0.5rem;
+            max-height: calc(2 * 2.15rem + 0.45rem);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        .faq-cat {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 2.15rem;
+            padding: 0 0.85rem;
+            border-radius: 0.55rem;
+            background: #F3F4F6;
+            color: #4B5563;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            line-height: 1;
+            white-space: nowrap;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+        .faq-cat:hover { background: #E5E7EB; color: #111827; }
+        .faq-cat.is-active {
+            background: var(--primary);
+            color: #ffffff;
+        }
+        .faq-list-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #374151;
+            margin-bottom: 0.75rem;
+        }
+        .faq-list { display: flex; flex-direction: column; gap: 0.25rem; }
+        .faq-item {
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+        .faq-item summary {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.7rem;
+            padding: 0.85rem 0.9rem;
+            cursor: pointer;
+            list-style: none;
+            border-radius: 0.75rem;
+            transition: background 0.15s ease;
+        }
+        .faq-item summary::-webkit-details-marker { display: none; }
+        .faq-item summary:hover,
+        .faq-item[open] summary { background: #F3F4F6; }
+        .faq-q {
+            flex-shrink: 0;
+            width: 1.35rem;
+            height: 1.35rem;
+            margin-top: 0.1rem;
+            border-radius: 0.35rem;
+            background: #E5E7EB;
+            color: #6B7280;
+            font-size: 0.7rem;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .faq-question {
+            flex: 1;
+            min-width: 0;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #1F2937;
+            line-height: 1.45;
+            word-break: keep-all;
+        }
+        .faq-answer-wrap {
+            padding: 0 0.9rem 0.95rem 3rem;
+        }
+        .faq-answer {
+            font-size: 0.875rem;
+            color: #4B5563;
+            line-height: 1.65;
+            word-break: keep-all;
+        }
+        @media (min-width: 640px) {
+            .faq-cats {
+                gap: 0.5rem 0.6rem;
+                max-height: calc(2 * 2.35rem + 0.5rem);
+                margin-bottom: 1.75rem;
+            }
+            .faq-cat {
+                height: 2.35rem;
+                padding: 0 1rem;
+                font-size: 0.875rem;
+                border-radius: 0.65rem;
+            }
+            .faq-list-title { font-size: 1.125rem; margin-bottom: 1rem; }
+            .faq-item summary { padding: 1rem 1.1rem; gap: 0.85rem; }
+            .faq-q { width: 1.5rem; height: 1.5rem; font-size: 0.75rem; }
+            .faq-question { font-size: 1rem; }
+            .faq-answer-wrap { padding: 0 1.1rem 1.1rem 3.45rem; }
+            .faq-answer { font-size: 0.9375rem; }
+        }
+        .comment-avatar {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 800;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            user-select: none;
+        }
+        .comment-item {
+            display: flex;
+            gap: 0.6rem;
+            padding: 0.65rem 0;
+        }
+        .comment-item + .comment-item { border-top: 1px solid #f3f4f6; }
+        .comment-author { font-size: 0.8125rem; font-weight: 700; color: #0f0f0f; }
+        .comment-time { font-size: 0.7rem; color: #606060; }
+        .comment-text { font-size: 0.875rem; color: #0f0f0f; line-height: 1.5; word-break: keep-all; overflow-wrap: anywhere; flex: 1; min-width: 0; }
+        .comment-body {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            margin-top: 0.15rem;
+        }
+        .comment-like-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #606060;
+            padding: 0.15rem 0.35rem;
+            border-radius: 9999px;
+            transition: background-color 0.15s ease, color 0.15s ease;
+            flex-shrink: 0;
+            line-height: 1.4;
+            margin-top: 0.05rem;
+        }
+        .comment-like-btn:hover { background-color: #f2f2f2; color: var(--primary); }
+        .comment-like-btn.is-liked { color: var(--primary); font-weight: 800; }
+        .comment-like-btn:disabled { cursor: default; }
+        .comment-scroll {
+            max-height: 18rem;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-right: 0.25rem;
+        }
+        .comment-pinned {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 0.35rem 0.65rem;
+            margin-bottom: 0.5rem;
+        }
+        .comment-submit-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 0.9rem;
+            border-radius: 9999px;
+            background: #FFD700;
+            color: #0055AA;
+            font-size: 0.875rem;
+            font-weight: 800;
+            white-space: nowrap;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+        }
+        .comment-submit-btn:hover { background: #ffcf33; }
+        .comment-submit-btn:active { transform: scale(0.97); }
+        .comment-input-line {
+            border: 0;
+            border-bottom: 1px solid #d1d5db;
+            border-radius: 0;
+            padding: 0.5rem 0.15rem;
+            font-size: 0.9375rem;
+            background: transparent;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            min-width: 0;
+        }
+        .comment-input-line:focus {
+            outline: none;
+            border-bottom: 2px solid #0f0f0f;
+        }
+        .sort-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 0.35rem;
+            background: #fff;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+            padding: 0.5rem 0;
+            min-width: min(17rem, calc(100vw - 2rem));
+            z-index: 20;
+        }
+        .sort-option { display: block; width: 100%; text-align: left; padding: 0.6rem 1.25rem; }
+        .sort-option:hover, .sort-option.is-active { background: #f2f2f2; }
+        .sort-option .sort-title { font-size: 0.875rem; font-weight: 700; color: #0f0f0f; }
+        .sort-option .sort-desc { font-size: 0.75rem; color: #606060; line-height: 1.35; }
+        @media (min-width: 640px) {
+            .comment-avatar { width: 2.25rem; height: 2.25rem; font-size: 0.9rem; }
+            .comment-item { gap: 0.75rem; padding: 0.55rem 0; }
+            .comment-text { font-size: 0.875rem; }
+            .comment-scroll { max-height: 21rem; }
+            .comment-input-line { font-size: 0.875rem; padding: 0.4rem 0.15rem; }
+        }
+        .mission-card {
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 1.25rem;
+            padding: 1.25rem 1.35rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .mission-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+        }
+        .mission-head {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            margin-bottom: 0.75rem;
+        }
+        .mission-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            background: var(--card-accent);
+            color: var(--card-icon-color);
+            flex-shrink: 0;
+        }
+        .mission-title {
+            font-size: 1.0625rem;
+            font-weight: 900;
+            color: var(--card-title-color);
+            line-height: 1.3;
+            word-break: keep-all;
+        }
+        .mission-desc {
+            font-size: 0.875rem;
+            color: #4b5563;
+            font-weight: 500;
+            line-height: 1.65;
+        }
+        .mission-card--blue {
+            --card-bg: #EEF5FC;
+            --card-border: #CBE0F5;
+            --card-accent: #0055AA;
+            --card-icon-color: #ffffff;
+            --card-title-color: #0055AA;
+        }
+        .mission-card--gold {
+            --card-bg: #FFF9E0;
+            --card-border: #F5E2A0;
+            --card-accent: #FFD700;
+            --card-icon-color: #6B4E00;
+            --card-title-color: #8A6A00;
+        }
+        .mission-card--teal {
+            --card-bg: #E9F7F4;
+            --card-border: #BFE6DD;
+            --card-accent: #16A085;
+            --card-icon-color: #ffffff;
+            --card-title-color: #0E6E5B;
+        }
+        @media (min-width: 640px) {
+            .mission-card { padding: 1.75rem 1.85rem; border-radius: 1.5rem; }
+            .mission-head { gap: 0.85rem; margin-bottom: 1rem; }
+            .mission-icon { width: 3rem; height: 3rem; font-size: 1.5rem; border-radius: 1rem; }
+            .mission-title { font-size: 1.25rem; }
+            .mission-desc { font-size: 0.9375rem; }
+        }
+        @media (max-width: 639px) {
+            .hide-br-mobile br { display: none; }
+            #comment-form {
+                display: flex;
+                flex-wrap: nowrap;
+                align-items: end;
+                gap: 0.5rem;
+            }
+            #comment-name {
+                width: 4.5rem !important;
+                flex-shrink: 0;
+            }
+            #comment-message { flex: 1 1 auto; min-width: 0; }
+            #comment-form .comment-submit-btn {
+                padding: 0.45rem 0.75rem;
+                font-size: 0.8125rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900">
+
+    <!-- 내비게이션 -->
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b-2 border-gray-100">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
+            <div class="text-xl sm:text-2xl font-black text-[#0055AA] flex items-center gap-2 shrink-0">
+                다름색
+            </div>
+            <div class="hidden md:flex gap-8 font-bold text-sm">
+                <a href="#mission" class="hover:text-[#0055AA] transition-colors">우리의 미션</a>
+                <a href="#insight" class="hover:text-[#0055AA] transition-colors">데이터 통계</a>
+                <a href="#simulation" class="hover:text-[#0055AA] transition-colors">시각 체험</a>
+                <a href="#guide" class="hover:text-[#0055AA] transition-colors">행동 지침</a>
+                <a href="#voices" class="hover:text-[#0055AA] transition-colors">지지 한마디</a>
+                <a href="#faq" class="hover:text-[#0055AA] transition-colors">오해와 진실</a>
+            </div>
+            <a href="#hero-action" class="bg-[#0055AA] text-white px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-full font-bold text-xs sm:text-sm hover:bg-blue-800 transition-all shrink-0">
+                서명하기
+            </a>
+        </div>
+    </nav>
+
+    <!-- [Section 1] Hero & Action (Amnesty Style) -->
+    <section id="hero-action" class="relative bg-[#0055AA] py-12 sm:py-16 md:py-20 overflow-hidden">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div class="text-white z-10">
+                <h1 class="text-[1.75rem] leading-snug sm:text-4xl md:text-6xl font-black sm:leading-tight mb-4 sm:mb-6 break-keep">
+                    모두가 <span class="text-[#FFD700]">같은 색</span>을 보지는 않지만,<br>
+                    <span class="underline decoration-[#FFD700] decoration-2 sm:decoration-4 underline-offset-4 sm:underline-offset-8">같은 기회</span>를 누리는 세상
+                </h1>
+                <p class="text-base sm:text-lg md:text-xl text-blue-100 font-medium mb-6 sm:mb-8 leading-relaxed break-keep">
+                    한국에만 약 150만 명의 색각이상자가 있습니다. 하지만 우리는 여전히 운전면허, 직업 선택, 일상의 정보에서 보이지 않는 장벽에 부딪힙니다. 다름색과 함께 그 장벽을 허물어 주세요.
+                </p>
+                <div class="bg-blue-900/40 p-4 sm:p-6 rounded-2xl border border-blue-400/30">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-1 sm:gap-0 mb-3">
+                        <span class="text-xs sm:text-sm font-bold uppercase tracking-widest text-blue-200">설립 지지 서명 현황</span>
+                        <span class="text-xl sm:text-2xl font-black text-[#FFD700]">8,421 / 10,000</span>
+                    </div>
+                    <div class="w-full bg-blue-800 rounded-full h-3 sm:h-4 overflow-hidden">
+                        <div id="progress-bar" class="progress-bar-fill h-full w-[0%]"></div>
+                    </div>
+                    <p class="text-xs text-blue-200 mt-3 font-medium leading-relaxed break-keep">현재 84% 달성! 비영리기관 설립을 위해 1,579명의 서명이 더 필요합니다.</p>
+                </div>
+            </div>
+
+            <!-- 서명 폼 -->
+            <div class="bg-white p-5 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl z-10">
+                <h3 class="text-xl sm:text-2xl font-extrabold text-[#0055AA] mb-4 sm:mb-6 text-center">지금 지지에 동참하세요</h3>
+                <div class="space-y-3 sm:space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">성함 / 닉네임</label>
+                        <input type="text" id="signer-name" placeholder="홍길동" class="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#0055AA] transition-all text-base">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">이메일 주소</label>
+                        <input type="email" id="signer-email" placeholder="example@email.com" class="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#0055AA] transition-all text-base">
+                    </div>
+                    <div class="flex items-start gap-3 py-2">
+                        <input type="checkbox" id="agree" class="mt-1 w-5 h-5 accent-[#0055AA] shrink-0">
+                        <label for="agree" class="text-xs text-gray-500 leading-relaxed break-keep">
+                            개인정보 수집 및 이용에 동의하며, 다름색 비영리기관 설립 준비위원회의 소식을 받아보는 것에 동의합니다.
+                        </label>
+                    </div>
+                    <button onclick="handleSignature()" class="w-full bg-[#FFD700] text-[#0055AA] font-black text-base sm:text-lg py-3.5 sm:py-4 rounded-xl shadow-lg hover:bg-yellow-400 transition-all transform active:scale-95">
+                        지지 서명하기
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Decorative Canvas Pattern -->
+        <canvas id="hero-pattern" class="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none"></canvas>
+    </section>
+
+    <!-- [Section 2] Support Comments -->
+    <section id="voices" class="py-12 sm:py-16 md:py-24 bg-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6">
+            <div class="text-center mb-8 sm:mb-12">
+                <span class="text-[#0055AA] font-black text-xs sm:text-sm uppercase tracking-widest">Support Voices</span>
+                <h2 class="text-2xl sm:text-4xl font-black mt-2">지지 한마디</h2>
+                <div class="w-16 sm:w-20 h-1.5 sm:h-2 bg-[#FFD700] mx-auto mt-4 sm:mt-6"></div>
+                <p class="text-sm sm:text-base text-gray-600 mt-4 sm:mt-6 max-w-2xl mx-auto leading-relaxed break-keep">
+                    다름색을 응원하는 한 줄을 남겨 주세요. 짧지만 큰 힘이 됩니다.
+                </p>
+            </div>
+
+            <div class="flex items-center gap-4 sm:gap-6 mb-4 sm:mb-6">
+                <h3 id="comment-total" class="text-lg sm:text-xl font-black">댓글 0개</h3>
+                <div class="relative">
+                    <button type="button" id="sort-toggle" onclick="toggleSortMenu()"
+                        class="flex items-center gap-2 text-sm font-bold text-gray-800 hover:text-black">
+                        <span aria-hidden="true">☰</span> 정렬 기준
+                    </button>
+                    <div id="sort-menu" class="sort-menu hidden">
+                        <button type="button" class="sort-option is-active" data-sort="popular" onclick="setCommentSort('popular')">
+                            <span class="sort-title block">인기순</span>
+                            <span class="sort-desc block">공감이 많은 한마디 먼저 표시</span>
+                        </button>
+                        <button type="button" class="sort-option" data-sort="recent" onclick="setCommentSort('recent')">
+                            <span class="sort-title block">최신순</span>
+                            <span class="sort-desc block">가장 최근에 남긴 한마디 먼저 표시</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <form id="comment-form" class="flex flex-nowrap items-end gap-2 sm:gap-3 mb-6 sm:mb-8" onsubmit="return handleComment(event)">
+                <input type="text" id="comment-name" maxlength="50" placeholder="닉네임" required
+                    class="comment-input-line w-20 sm:w-36 shrink-0">
+                <input type="text" id="comment-message" maxlength="80" placeholder="지지 한마디 추가..." required
+                    class="comment-input-line flex-1 min-w-0">
+                <button type="submit" class="comment-submit-btn shrink-0" aria-label="지지 한마디 달기">
+                    달기
+                </button>
+            </form>
+
+            <div id="comment-empty" class="py-6 text-center text-gray-400 text-sm hidden">아직 지지 한마디가 없습니다. 첫 응원을 남겨 주세요.</div>
+            <div id="popular-comment" class="hidden"></div>
+            <div id="comment-scroll" class="comment-scroll hidden"></div>
+        </div>
+    </section>
+
+    <!-- [Section 3] Mission Cards -->
+    <section id="mission" class="py-12 sm:py-16 md:py-24 bg-gray-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6">
+            <div class="text-center mb-10 sm:mb-16">
+                <span class="text-[#0055AA] font-black tracking-widest uppercase text-xs sm:text-sm">Our Mission</span>
+                <h2 class="text-2xl sm:text-4xl font-black mt-3 sm:mt-4 break-keep">다름색의 3대 핵심 목표</h2>
+                <div class="w-16 sm:w-20 h-1.5 sm:h-2 bg-[#FFD700] mx-auto mt-4 sm:mt-6"></div>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-4 sm:gap-8">
+                <div class="mission-card mission-card--blue">
+                    <div class="mission-head">
+                        <span class="mission-icon" aria-hidden="true">▤</span>
+                        <h4 class="mission-title">정보의 접근성</h4>
+                    </div>
+                    <p class="mission-desc break-keep">
+                        "색의 장벽을 허무는 정보, 모두를 위한 명확함."<br>
+                        색상에만 의존하지 않는 유니버설 디자인을 사회 전반에 확산시킵니다.
+                    </p>
+                </div>
+                <div class="mission-card mission-card--gold">
+                    <div class="mission-head">
+                        <span class="mission-icon" aria-hidden="true">⚖</span>
+                        <h4 class="mission-title">제도의 평등</h4>
+                    </div>
+                    <p class="mission-desc break-keep">
+                        "시각의 차이가 기회의 차단이 되지 않는 사회."<br>
+                        불합리한 채용 제한과 면허 규정을 데이터 기반으로 개선합니다.
+                    </p>
+                </div>
+                <div class="mission-card mission-card--teal">
+                    <div class="mission-head">
+                        <span class="mission-icon" aria-hidden="true">🤝</span>
+                        <h4 class="mission-title">인식과 연대</h4>
+                    </div>
+                    <p class="mission-desc break-keep">
+                        "결핍이 아닌 다양성, 연대로 넓히는 스펙트럼."<br>
+                        당사자들의 경험을 결집하여 색각이상에 대한 사회적 인식을 바로잡습니다.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- [Section 3] Data Insights -->
+    <section id="insight" class="py-12 sm:py-16 md:py-24 bg-white">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6">
+            <div class="flex flex-col md:flex-row gap-8 md:gap-16 items-center">
+                <div class="md:w-1/2 w-full">
+                    <span class="text-[#0055AA] font-black tracking-widest uppercase text-xs sm:text-sm">Data Insights</span>
+                    <h2 class="text-2xl sm:text-4xl font-black mt-3 sm:mt-4 mb-5 sm:mb-8 leading-snug break-keep">침묵 속에 가려진<br>대한민국의 시선들</h2>
+                    <p class="text-gray-700 text-base sm:text-lg mb-5 sm:mb-6 leading-relaxed break-keep">
+                        한국 남성의 <strong>약 5.9%</strong>, 여성의 약 0.4%가 색각이상을 가지고 있습니다. 이는 결코 적은 숫자가 아닙니다. 우리 곁의 많은 사람들이 매일 신호등을 의심하고, 지하철 노선도 앞에서 망설입니다.
+                    </p>
+                    <div class="bg-gray-100 p-4 sm:p-6 rounded-2xl">
+                        <p class="text-xs sm:text-sm text-gray-500 italic leading-relaxed break-keep">
+                            * 본 통계는 보건복지부 및 관련 학회 자료를 근거로 재구성되었습니다.
+                        </p>
+                    </div>
+                </div>
+                <div class="md:w-1/2 w-full">
+                    <div class="chart-container">
+                        <canvas id="prevalenceChart"></canvas>
+                    </div>
+                    <p class="text-center text-xs sm:text-sm font-bold text-gray-400 mt-3 sm:mt-4 break-keep">한국 내 인구 1,000명당 색각이상자 비율 (추정)</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- [Section 4] Interactive Simulation (Empathy) -->
+    <section id="simulation" class="py-12 sm:py-16 md:py-24 bg-gray-900 text-white overflow-hidden">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6">
+            <div class="text-center mb-8 sm:mb-16">
+                <h2 class="text-2xl sm:text-4xl font-black mb-4 sm:mb-6 leading-snug break-keep">시선의 차이를 직접 확인해보세요</h2>
+                <p class="text-sm sm:text-base text-blue-200 max-w-2xl mx-auto leading-relaxed break-keep hide-br-mobile">
+                    아래의 이미지는 색각이상자가 겪는 세상을 시뮬레이션한 것입니다. <br>
+                    버튼을 클릭하여 필터를 적용해 보고, 정보가 어떻게 변하는지 체험해 보세요.
+                </p>
+            </div>
+
+            <div class="bg-gray-800 p-3 sm:p-4 md:p-10 rounded-2xl sm:rounded-[40px] border border-gray-700">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-5 sm:mb-8">
+                    <button onclick="applySim('normal')" class="sim-btn bg-white text-gray-900 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-95" id="btn-normal">일반 시선</button>
+                    <button onclick="applySim('protan')" class="sim-btn bg-gray-700 text-white px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-95" id="btn-protan">적색약</button>
+                    <button onclick="applySim('deutan')" class="sim-btn bg-gray-700 text-white px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-95" id="btn-deutan">녹색약</button>
+                    <button onclick="applySim('tritan')" class="sim-btn bg-gray-700 text-white px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm transition-all active:scale-95" id="btn-tritan">청색약</button>
+                </div>
+
+                <div class="relative w-full aspect-video md:aspect-[21/9] rounded-xl sm:rounded-2xl overflow-hidden bg-black flex items-center justify-center">
+                    <canvas id="simCanvas" class="max-w-full h-full object-contain"></canvas>
+                    <div id="sim-loader" class="absolute inset-0 bg-gray-900 flex items-center justify-center hidden">
+                        <div class="animate-spin text-4xl">⏳</div>
+                    </div>
+                </div>
+                
+                <div class="mt-5 sm:mt-8 grid md:grid-cols-2 gap-4 sm:gap-8 items-center">
+                    <div class="flex items-start sm:items-center gap-3 sm:gap-4">
+                        <span class="text-2xl sm:text-3xl text-[#FFD700] shrink-0">💡</span>
+                        <p class="text-xs sm:text-sm text-gray-300 leading-relaxed break-keep">
+                            <strong>발견하셨나요?</strong> 필터를 씌우면 빨간색 사과와 초록색 잎의 경계가 모호해집니다. 이것이 우리가 '패턴'과 '텍스트'를 병기해야 하는 이유입니다.
+                        </p>
+                    </div>
+                    <div class="text-left md:text-right">
+                        <span class="bg-[#0055AA] text-white text-[10px] sm:text-xs px-3 py-1 rounded-full uppercase font-bold tracking-widest">Inclusive Solution</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- [Section 5] Target-specific Guide (Tabs) -->
+    <section id="guide" class="py-12 sm:py-16 md:py-24 bg-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6">
+            <div class="text-center mb-8 sm:mb-12">
+                <span class="text-[#0055AA] font-black text-xs sm:text-sm uppercase">How to Help</span>
+                <h2 class="text-2xl sm:text-4xl font-black mt-2 break-keep">함께 만드는 변화의 방법</h2>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="guide-tabs mb-6 sm:mb-10" role="tablist" aria-label="대상별 참여 방법">
+                <button type="button" onclick="showTab('당사자')" id="tab-당사자" class="tab-btn guide-tab is-active" role="tab" aria-selected="true" aria-controls="tab-content">당사자를 위해</button>
+                <button type="button" onclick="showTab('일반인')" id="tab-일반인" class="tab-btn guide-tab" role="tab" aria-selected="false" aria-controls="tab-content">일반인을 위해</button>
+                <button type="button" onclick="showTab('기업')" id="tab-기업" class="tab-btn guide-tab" role="tab" aria-selected="false" aria-controls="tab-content">기업/교육자를 위해</button>
+            </div>
+
+            <!-- Tab Content Area -->
+            <div id="tab-content" class="min-h-[220px] sm:min-h-[300px] bg-gray-50 p-5 sm:p-8 rounded-2xl sm:rounded-3xl border-2 border-dashed border-gray-200">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- [Section 7] FAQ -->
+    <section id="faq" class="py-12 sm:py-16 md:py-24 bg-white">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6">
+            <div class="text-center mb-8 sm:mb-10">
+                <h2 class="text-2xl sm:text-4xl font-black break-keep">색각이상에 대한 오해와 진실</h2>
+                <div class="w-16 sm:w-20 h-1.5 sm:h-2 bg-[#FFD700] mx-auto mt-4 sm:mt-6"></div>
+                <p class="text-sm sm:text-base text-gray-600 mt-4 sm:mt-6 max-w-2xl mx-auto leading-relaxed break-keep">
+                    색각이상과 다름색에 대해 궁금한 점을 모았습니다.
+                </p>
+            </div>
+            <div id="faq-cats" class="faq-cats" role="tablist" aria-label="질문 카테고리"></div>
+            <h3 class="faq-list-title">질문 TOP</h3>
+            <div id="faq-list" class="faq-list">
+                <p class="text-center text-gray-500 py-8 text-sm">질문을 불러오는 중...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-950 text-gray-400 py-12 sm:py-16 border-t-4 border-[#0055AA]">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 grid md:grid-cols-3 gap-8 sm:gap-12">
+            <div>
+                <div class="text-xl sm:text-2xl font-black text-white flex items-center gap-2 mb-4 sm:mb-6">
+                    다름색
+                </div>
+                <p class="text-sm leading-relaxed mb-6 break-keep">
+                    비영리기관 다름색은 모든 국민의 시각적 다양성이 존중받고 보편적 정보 접근권이 보장되는 사회를 꿈꿉니다.
+                </p>
+            </div>
+            <div>
+                <h5 class="text-white font-bold mb-4 uppercase tracking-widest text-xs">연락처 및 문의</h5>
+                <p class="text-sm mb-2">대표 이메일: info@diffcolor.org</p>
+                <p class="text-sm mb-2">설립 준비위원회: 02-123-4567</p>
+                <p class="text-sm">주소: 서울특별시 중구 세종대로 다름타워 7층</p>
+            </div>
+            <div>
+                <h5 class="text-white font-bold mb-4 uppercase tracking-widest text-xs">빠른 링크</h5>
+                <ul class="text-sm space-y-2">
+                    <li><a href="#" class="hover:text-white transition-colors">개인정보 처리방침</a></li>
+                    <li><a href="#" class="hover:text-white transition-colors">이용 약관</a></li>
+                    <li><a href="#" class="hover:text-white transition-colors">서명 참여 내역 확인</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="max-w-6xl mx-auto px-6 mt-16 pt-8 border-t border-gray-800 text-center text-xs">
+            &copy; 2026 Dareum-saek Foundation Prep Committee. All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+        // --- [Data Storage] ---
+        const tabData = {
+            '당사자': {
+                title: '시선의 주체로 당당하게 서기',
+                items: [
+                    '유용한 보조 도구 리스트: Color Blind Pal, EnChroma 안경 정보 제공',
+                    '권리 침해 대응 매뉴얼: 채용 제한 시 법률적 대응 방법 안내',
+                    '경험 공유 커뮤니티: 나만의 일상 노하우(신호등 구분, 옷 코디 등) 공유'
+                ]
+            },
+            '일반인': {
+                title: '이해를 넘어 지지자로',
+                items: [
+                    '인클루시브 에티켓: 일상에서 색상으로만 설명하지 않기 (예: "저기 빨간 건물" -> "저기 높은 벽돌 건물")',
+                    '서명 캠페인 공유: SNS를 통해 다름색의 설립 취지 널리 알리기',
+                    '유니버설 디자인 제안: 내 주변 공공 시설의 불편한 색상 표기 제보하기'
+                ]
+            },
+            '기업': {
+                title: '모두를 위한 디자인 표준 수립',
+                items: [
+                    '웹 접근성 가이드라인: WCAG 2.1 기준 고대비 및 패턴 적용 지원',
+                    '채용 기준 컨설팅: 직무와 무관한 색각 제한 규정 개선 상담',
+                    '인클루시브 교육 자료: 학교 및 직장 내 인식 개선 교육 콘텐츠 다운로드'
+                ]
+            }
+        };
+
+        // --- [State Management] ---
+        let currentFilter = 'normal';
+        let signatureCount = 8421;
+        const API_BASE = '';
+        const COMMENT_MAX_LEN = 80;
+
+        // --- [Canvas Simulation Logic] ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        // 고화질 음식/꽃 이미지 사용 (색상이 풍부함)
+        img.src = 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=1200&q=80';
+
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            applySim('normal');
+        };
+
+        function applySim(type) {
+            currentFilter = type;
+            const buttons = document.querySelectorAll('.sim-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-white', 'text-gray-900');
+                btn.classList.add('bg-gray-700', 'text-white');
+            });
+            document.getElementById(`btn-${type}`).classList.replace('bg-gray-700', 'bg-white');
+            document.getElementById(`btn-${type}`).classList.replace('text-white', 'text-gray-900');
+
+            ctx.drawImage(img, 0, 0);
+            if (type === 'normal') return;
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            // Simple Color Transformation Matrices for Simulation
+            const matrices = {
+                protan: [0.567, 0.433, 0, 0.558, 0.442, 0, 0, 0.242, 0.758],
+                deutan: [0.625, 0.375, 0, 0.7, 0.3, 0, 0, 0.3, 0.7],
+                tritan: [0.95, 0.05, 0, 0, 0.433, 0.567, 0, 0.475, 0.525]
+            };
+
+            const m = matrices[type];
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i], g = data[i+1], b = data[i+2];
+                data[i] = r * m[0] + g * m[1] + b * m[2];
+                data[i+1] = r * m[3] + g * m[4] + b * m[5];
+                data[i+2] = r * m[6] + g * m[7] + b * m[8];
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        // --- [Chart.js Implementation] ---
+        function initCharts() {
+            const chartCtx = document.getElementById('prevalenceChart').getContext('2d');
+            const chartValues = [59, 54, 4, 3.5];
+            // 1,000명당 인원 → 인구 대비 %
+            const percentLabels = ['5.9%', '5.4%', '0.4%', '0.35%'];
+            const countLabels = chartValues.map((v) => `${v}명`);
+
+            new Chart(chartCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['남성(전체)', '남성(적록)', '여성(전체)', '여성(적록)'],
+                    datasets: [{
+                        label: '1,000명당 인원수',
+                        data: chartValues,
+                        backgroundColor: ['#0055AA', '#FFD700', '#0055AA', '#FFD700'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 28 }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label(ctx) {
+                                    const i = ctx.dataIndex;
+                                    return `${countLabels[i]} (${percentLabels[i]})`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 70,
+                            grid: { color: '#E5E7EB' },
+                            ticks: { font: { weight: 'bold' } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { weight: 'bold' } }
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'barValueLabels',
+                    afterDatasetsDraw(chart) {
+                        const { ctx } = chart;
+                        const meta = chart.getDatasetMeta(0);
+                        ctx.save();
+                        meta.data.forEach((bar, i) => {
+                            const x = bar.x;
+                            const y = bar.y;
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            ctx.fillStyle = '#111827';
+                            ctx.font = 'bold 12px Pretendard, sans-serif';
+                            ctx.fillText(countLabels[i], x, y - 16);
+                            ctx.fillStyle = '#4B5563';
+                            ctx.font = '600 11px Pretendard, sans-serif';
+                            ctx.fillText(percentLabels[i], x, y - 2);
+                        });
+                        ctx.restore();
+                    }
+                }]
+            });
+        }
+
+        // --- [UI Interaction Logic] ---
+        function showTab(category) {
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('is-active');
+                btn.setAttribute('aria-selected', 'false');
+            });
+
+            const activeBtn = document.getElementById(`tab-${category}`);
+            activeBtn.classList.add('is-active');
+            activeBtn.setAttribute('aria-selected', 'true');
+            
+            const content = tabData[category];
+            const contentDiv = document.getElementById('tab-content');
+            
+            contentDiv.innerHTML = `
+                <h4 class="text-lg sm:text-2xl font-black text-[#0055AA] mb-4 sm:mb-6 leading-snug">${content.title}</h4>
+                <ul class="space-y-3 sm:space-y-4">
+                    ${content.items.map(item => `
+                        <li class="flex items-start gap-2.5 sm:gap-3 text-sm sm:text-base text-gray-700 font-medium leading-relaxed">
+                            <span class="text-[#FFD700] text-lg sm:text-xl shrink-0">✔</span>
+                            <span>${item}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            `;
+        }
+
+        async function handleSignature() {
+            const name = document.getElementById('signer-name').value;
+            const email = document.getElementById('signer-email').value;
+            const agreed = document.getElementById('agree').checked;
+
+            if(!name) { alert('성함을 입력해주세요.'); return; }
+            if(!agreed) { alert('개인정보 수집 및 이용에 동의해주세요.'); return; }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/signatures`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, agreed })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    alert(`오류: ${data.error}`);
+                    return;
+                }
+
+                alert(`${name}님, 소중한 지지 서명이 완료되었습니다! 비영리기관 설립을 위해 끝까지 함께해 주세요.`);
+                
+                // Update Progress Bar
+                signatureCount = data.count;
+                updateProgress();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('서버와 통신하는 중 문제가 발생했습니다.');
+            }
+        }
+
+        function updateProgress() {
+            const bar = document.getElementById('progress-bar');
+            const countDisplay = document.querySelector('.bg-blue-900\\/40 .text-2xl');
+            const percent = (signatureCount / 10000) * 100;
+            bar.style.width = Math.min(percent, 100) + '%';
+            if (countDisplay) {
+                countDisplay.innerHTML = `${signatureCount.toLocaleString()} / 10,000`;
+            }
+        }
+
+        function drawHeroPattern() {
+            const pCanvas = document.getElementById('hero-pattern');
+            const pCtx = pCanvas.getContext('2d');
+            pCanvas.width = window.innerWidth;
+            pCanvas.height = 600;
+            
+            pCtx.strokeStyle = '#FFFFFF';
+            pCtx.lineWidth = 1;
+            for(let i=0; i<pCanvas.width; i+=40) {
+                pCtx.beginPath();
+                pCtx.moveTo(i, 0);
+                pCtx.lineTo(i - 200, pCanvas.height);
+                pCtx.stroke();
+            }
+        }
+
+        async function fetchSignatureCount() {
+            try {
+                const response = await fetch(`${API_BASE}/api/signatures/count`);
+                if(response.ok) {
+                    const data = await response.json();
+                    if (data.count) {
+                        signatureCount = data.count;
+                        updateProgress();
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch count:', error);
+            }
+        }
+
+        let faqCache = [];
+        let faqCategory = '전체';
+
+        function getFaqCategories(items) {
+            const cats = [];
+            items.forEach((item) => {
+                const cat = String(item.category || '').trim();
+                if (cat && !cats.includes(cat)) cats.push(cat);
+            });
+            return ['전체', ...cats];
+        }
+
+        function renderFaqCategories(items) {
+            const wrap = document.getElementById('faq-cats');
+            const cats = getFaqCategories(items).slice(0, 10);
+            wrap.innerHTML = cats.map((cat) => `
+                <button type="button" class="faq-cat ${cat === faqCategory ? 'is-active' : ''}"
+                    data-faq-cat="${escapeHtml(cat)}" role="tab"
+                    aria-selected="${cat === faqCategory ? 'true' : 'false'}">${escapeHtml(cat)}</button>
+            `).join('');
+            wrap.querySelectorAll('[data-faq-cat]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    faqCategory = btn.dataset.faqCat;
+                    renderFaqCategories(faqCache);
+                    renderFaqList(faqCache);
+                });
+            });
+        }
+
+        function renderFaqList(items) {
+            const list = document.getElementById('faq-list');
+            const filtered = faqCategory === '전체'
+                ? items
+                : items.filter((item) => item.category === faqCategory);
+
+            if (!filtered.length) {
+                list.innerHTML = '<p class="text-center text-gray-500 py-8 text-sm">해당 카테고리의 질문이 없습니다.</p>';
+                return;
+            }
+
+            list.innerHTML = filtered.map((item) => `
+                <details class="faq-item">
+                    <summary>
+                        <span class="faq-q" aria-hidden="true">Q</span>
+                        <span class="faq-question">${escapeHtml(item.question)}</span>
+                    </summary>
+                    <div class="faq-answer-wrap">
+                        <p class="faq-answer whitespace-pre-line">${escapeHtml(item.answer)}</p>
+                    </div>
+                </details>
+            `).join('');
+        }
+
+        async function loadFaq() {
+            const list = document.getElementById('faq-list');
+            try {
+                const response = await fetch('/api/faq');
+                if (!response.ok) throw new Error('FAQ load failed');
+                const items = await response.json();
+                if (!Array.isArray(items) || items.length === 0) {
+                    list.innerHTML = '<p class="text-center text-gray-500 py-8 text-sm">등록된 질문이 없습니다.</p>';
+                    return;
+                }
+                faqCache = items;
+                faqCategory = '전체';
+                renderFaqCategories(items);
+                renderFaqList(items);
+            } catch (error) {
+                console.error('Failed to load FAQ:', error);
+                list.innerHTML = '<p class="text-center text-red-500 py-8 text-sm">질문을 불러오지 못했습니다.</p>';
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function updateCommentCount() {
+            // no-op: count UI removed
+        }
+
+        function resetCommentForm() {
+            document.getElementById('comment-name').value = '';
+            document.getElementById('comment-message').value = '';
+        }
+
+        function formatCommentTime(iso) {
+            const date = new Date(iso);
+            if (Number.isNaN(date.getTime())) return '';
+            const diffSec = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+            if (diffSec < 60) return '방금 전';
+            if (diffSec < 3600) return `${Math.floor(diffSec / 60)}분 전`;
+            if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}시간 전`;
+            if (diffSec < 2592000) return `${Math.floor(diffSec / 86400)}일 전`;
+            return date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        const LIKED_STORAGE_KEY = 'dareum_liked_comments';
+        const AVATAR_COLORS = ['#0055AA', '#E67E22', '#16A085', '#8E44AD', '#C0392B', '#2C3E50', '#D4A017'];
+        let commentSort = 'popular';
+        let commentCache = [];
+
+        function avatarColor(name) {
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+            return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+        }
+
+        function toggleSortMenu() {
+            document.getElementById('sort-menu').classList.toggle('hidden');
+        }
+
+        function setCommentSort(sort) {
+            commentSort = sort;
+            document.querySelectorAll('.sort-option').forEach((btn) => {
+                btn.classList.toggle('is-active', btn.dataset.sort === sort);
+            });
+            document.getElementById('sort-menu').classList.add('hidden');
+            renderComments(commentCache);
+        }
+
+        function getLikedIds() {
+            try {
+                const raw = localStorage.getItem(LIKED_STORAGE_KEY);
+                const parsed = raw ? JSON.parse(raw) : [];
+                return Array.isArray(parsed) ? parsed.map(String) : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function setLikedIds(ids) {
+            localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify(ids));
+        }
+
+        function hasLiked(id) {
+            return getLikedIds().includes(String(id));
+        }
+
+        function markLiked(id) {
+            const ids = getLikedIds();
+            if (!ids.includes(String(id))) {
+                ids.push(String(id));
+                setLikedIds(ids);
+            }
+        }
+
+        function commentItemHtml(item, { pinned = false } = {}) {
+            const liked = hasLiked(item.id);
+            const name = String(item.name);
+            return `
+                <div class="comment-item" data-id="${item.id}">
+                    <div class="comment-avatar" style="background:${avatarColor(name)}">${escapeHtml(name.charAt(0))}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            ${pinned ? '<span class="text-[11px] font-black text-[#0055AA] bg-[#FFD700]/40 px-2 py-0.5 rounded-full">인기 한마디</span>' : ''}
+                            <span class="comment-author">@${escapeHtml(name)}</span>
+                            <span class="comment-time">${formatCommentTime(item.created_at)}</span>
+                        </div>
+                        <div class="comment-body">
+                            <p class="comment-text break-words">${escapeHtml(item.message)}</p>
+                            <button type="button" class="comment-like-btn ${liked ? 'is-liked' : ''}"
+                                data-like-id="${item.id}" ${liked ? 'disabled' : ''} aria-label="공감">
+                                <span aria-hidden="true">${liked ? '👍' : '👍🏻'}</span>
+                                <span class="like-count">${Number(item.likes) || 0}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function sortComments(items) {
+            const sorted = [...items];
+            if (commentSort === 'recent') {
+                sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            } else {
+                sorted.sort((a, b) => {
+                    const likeDiff = (Number(b.likes) || 0) - (Number(a.likes) || 0);
+                    if (likeDiff !== 0) return likeDiff;
+                    return new Date(b.created_at) - new Date(a.created_at);
+                });
+            }
+            return sorted;
+        }
+
+        function pickPopularComment(items) {
+            if (!items.length) return null;
+            const top = [...items].sort((a, b) => {
+                const likeDiff = (Number(b.likes) || 0) - (Number(a.likes) || 0);
+                if (likeDiff !== 0) return likeDiff;
+                return new Date(b.created_at) - new Date(a.created_at);
+            })[0];
+            return (Number(top.likes) || 0) > 0 ? top : null;
+        }
+
+        function bindLikeButtons(root) {
+            root.querySelectorAll('[data-like-id]').forEach((btn) => {
+                btn.addEventListener('click', () => handleLike(btn.dataset.likeId));
+            });
+        }
+
+        function renderComments(items) {
+            commentCache = items;
+            const popularWrap = document.getElementById('popular-comment');
+            const empty = document.getElementById('comment-empty');
+            const listWrap = document.getElementById('comment-scroll');
+
+            document.getElementById('comment-total').textContent = `댓글 ${items.length}개`;
+
+            if (!items.length) {
+                popularWrap.classList.add('hidden');
+                popularWrap.innerHTML = '';
+                listWrap.classList.add('hidden');
+                listWrap.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            const popular = pickPopularComment(items);
+            if (popular) {
+                popularWrap.classList.remove('hidden');
+                popularWrap.innerHTML = `<div class="comment-pinned">${commentItemHtml(popular, { pinned: true })}</div>`;
+                bindLikeButtons(popularWrap);
+            } else {
+                popularWrap.classList.add('hidden');
+                popularWrap.innerHTML = '';
+            }
+
+            const listItems = sortComments(popular ? items.filter((item) => item.id !== popular.id) : items);
+            if (!listItems.length) {
+                listWrap.classList.add('hidden');
+                listWrap.innerHTML = '';
+                return;
+            }
+
+            listWrap.classList.remove('hidden');
+            listWrap.innerHTML = listItems.map((item) => commentItemHtml(item)).join('');
+            bindLikeButtons(listWrap);
+        }
+
+        async function handleLike(id, buttonEl) {
+            if (hasLiked(id)) return;
+            try {
+                const response = await fetch(`${API_BASE}/api/comments/${id}/like`, { method: 'POST' });
+                const data = await response.json();
+                if (!response.ok) {
+                    alert(data.error || '공감에 실패했습니다.');
+                    return;
+                }
+                markLiked(id);
+                await loadComments();
+            } catch (error) {
+                console.error('Error liking comment:', error);
+                alert('서버와 통신하는 중 문제가 발생했습니다.');
+            }
+        }
+
+        async function loadComments() {
+            try {
+                const response = await fetch(`${API_BASE}/api/comments`);
+                if (!response.ok) throw new Error('Failed to load comments');
+                const data = await response.json();
+                renderComments(data);
+            } catch (error) {
+                console.error('Failed to load comments:', error);
+                const empty = document.getElementById('comment-empty');
+                empty.classList.remove('hidden');
+                empty.textContent = '지지 한마디를 불러오지 못했습니다.';
+                empty.classList.add('text-red-500');
+            }
+        }
+
+        async function handleComment(event) {
+            event.preventDefault();
+            const nameInput = document.getElementById('comment-name');
+            const messageInput = document.getElementById('comment-message');
+            const name = nameInput.value.trim();
+            const message = messageInput.value.trim().replace(/\s+/g, ' ');
+
+            if (!name || !message) {
+                alert('닉네임과 지지 한마디를 모두 입력해주세요.');
+                return false;
+            }
+            if (message.length > COMMENT_MAX_LEN) {
+                alert(`지지 한마디는 ${COMMENT_MAX_LEN}자 이내로 작성해주세요.`);
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, message })
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    alert(data.error || '등록에 실패했습니다.');
+                    return false;
+                }
+                resetCommentForm();
+                await loadComments();
+            } catch (error) {
+                console.error('Error posting comment:', error);
+                alert('서버와 통신하는 중 문제가 발생했습니다.');
+            }
+            return false;
+        }
+
+        // --- [Initial Load] ---
+        window.onload = () => {
+            initCharts();
+            showTab('당사자');
+            drawHeroPattern();
+            setTimeout(updateProgress, 500); // Animation delay
+            fetchSignatureCount();
+            loadFaq();
+            loadComments();
+            updateCommentCount();
+
+            document.addEventListener('click', (event) => {
+                const menu = document.getElementById('sort-menu');
+                const toggle = document.getElementById('sort-toggle');
+                if (!menu.contains(event.target) && !toggle.contains(event.target)) {
+                    menu.classList.add('hidden');
+                }
+            });
+        };
+    </script>
+</body>
+</html>

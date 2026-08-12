@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>다름색 - 관리자</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css">
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; }
+        .hidden-view { display: none !important; }
+        .admin-nav-btn.is-active {
+            background: #0055AA;
+            color: #fff;
+        }
+    </style>
+</head>
+<body class="text-gray-900 min-h-screen flex flex-col">
+
+    <!-- Login View -->
+    <div id="login-view" class="flex-grow flex items-center justify-center hidden-view">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <img src="/logo-web.png" alt="다름색" class="h-8 w-auto" decoding="async">
+                    <span class="text-2xl font-black text-[#0055AA]">관리자</span>
+                </div>
+                <p class="text-gray-500 text-sm">관리자 계정으로 로그인해주세요.</p>
+            </div>
+
+            <form id="login-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">아이디</label>
+                    <input type="text" id="admin-id" required class="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#0055AA] transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">비밀번호</label>
+                    <input type="password" id="admin-pw" required class="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#0055AA] transition-all">
+                </div>
+                <div id="login-error" class="text-red-500 text-sm font-medium text-center hidden-view"></div>
+                <button type="submit" class="w-full bg-[#0055AA] text-white font-black text-lg py-4 rounded-xl shadow-lg hover:bg-blue-800 transition-all">
+                    로그인
+                </button>
+            </form>
+            <div class="mt-6 text-center">
+                <a href="/" class="text-sm text-gray-400 hover:text-gray-700">홈페이지로 돌아가기</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="dashboard-view" class="hidden-view w-full pb-16">
+        <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2 min-w-0">
+                    <img src="/logo-web.png" alt="다름색" class="h-7 sm:h-8 w-auto" decoding="async">
+                    <span class="font-black text-[#0055AA] text-lg sm:text-xl shrink-0">관리자</span>
+                </div>
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <a href="/" class="text-sm font-medium text-gray-500 hover:text-gray-900">홈으로</a>
+                    <button type="button" onclick="logout()" class="text-sm font-bold text-red-500 hover:text-red-700">로그아웃</button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+            <div class="flex flex-wrap gap-2 mb-8" role="tablist" aria-label="관리 메뉴">
+                <button type="button" class="admin-nav-btn is-active px-4 py-2 rounded-full text-sm font-bold bg-white text-gray-700 border border-gray-200" data-panel="signatures">지지서명</button>
+                <button type="button" class="admin-nav-btn px-4 py-2 rounded-full text-sm font-bold bg-white text-gray-700 border border-gray-200" data-panel="faq">FAQ 관리</button>
+                <button type="button" class="admin-nav-btn px-4 py-2 rounded-full text-sm font-bold bg-white text-gray-700 border border-gray-200" data-panel="comments">지지 한마디</button>
+            </div>
+
+            <!-- 지지서명 -->
+            <section id="panel-signatures" class="admin-panel">
+                <div class="sm:flex sm:items-center sm:justify-between gap-4 mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">지지서명 관리</h1>
+                        <p class="mt-1 text-sm text-gray-600">서명한 사람들의 목록을 확인하고 삭제할 수 있습니다.</p>
+                    </div>
+                    <span id="total-count" class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+                        총 서명자: 로딩 중...
+                    </span>
+                </div>
+                <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-white">
+                    <table class="min-w-full divide-y divide-gray-300">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">ID</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">이름/닉네임</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">이메일</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">서명 일시</th>
+                                <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="signature-table-body" class="divide-y divide-gray-200 bg-white">
+                            <tr><td colspan="5" class="py-4 text-center text-sm text-gray-500">데이터를 불러오는 중입니다...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- FAQ -->
+            <section id="panel-faq" class="admin-panel hidden-view">
+                <div class="sm:flex sm:items-center sm:justify-between gap-4 mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">FAQ 관리</h1>
+                        <p class="mt-1 text-sm text-gray-600">질문을 추가하거나 삭제하면 홈페이지에 바로 반영됩니다.</p>
+                    </div>
+                    <span id="faq-total-count" class="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-800">
+                        총 FAQ: 로딩 중...
+                    </span>
+                </div>
+
+                <form id="faq-form" class="bg-white rounded-2xl shadow ring-1 ring-black/5 p-5 sm:p-6 mb-8 space-y-4">
+                    <h2 class="text-lg font-bold text-gray-900">FAQ 추가</h2>
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1" for="faq-category">카테고리</label>
+                            <input list="faq-category-list" id="faq-category" maxlength="20" required
+                                placeholder="예: 기초, 유형, 디자인"
+                                class="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#0055AA] transition-all">
+                            <datalist id="faq-category-list"></datalist>
+                        </div>
+                        <div class="sm:pt-7 text-xs text-gray-500 break-keep">기존 카테고리를 고르거나 새 이름을 입력할 수 있습니다.</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1" for="faq-question">질문</label>
+                        <input type="text" id="faq-question" maxlength="200" required
+                            class="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#0055AA] transition-all"
+                            placeholder="질문을 입력하세요">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1" for="faq-answer">답변</label>
+                        <textarea id="faq-answer" rows="4" maxlength="2000" required
+                            class="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#0055AA] transition-all"
+                            placeholder="답변을 입력하세요"></textarea>
+                    </div>
+                    <div id="faq-form-error" class="text-red-500 text-sm font-medium hidden-view"></div>
+                    <button type="submit" class="bg-[#0055AA] text-white font-bold px-5 py-3 rounded-xl hover:bg-blue-800 transition-all">
+                        FAQ 추가
+                    </button>
+                </form>
+
+                <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-white">
+                    <table class="min-w-full divide-y divide-gray-300">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">ID</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">카테고리</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">질문 / 답변</th>
+                                <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="faq-table-body" class="divide-y divide-gray-200 bg-white">
+                            <tr><td colspan="4" class="py-4 text-center text-sm text-gray-500">데이터를 불러오는 중입니다...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 지지 한마디 -->
+            <section id="panel-comments" class="admin-panel hidden-view">
+                <div class="sm:flex sm:items-center sm:justify-between gap-4 mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">지지 한마디</h1>
+                        <p class="mt-1 text-sm text-gray-600">방문자가 남긴 한 줄 지지 댓글입니다. 부적절하면 삭제할 수 있습니다.</p>
+                    </div>
+                    <span id="comment-total-count" class="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-800">
+                        총 댓글: 로딩 중...
+                    </span>
+                </div>
+                <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-white">
+                    <table class="min-w-full divide-y divide-gray-300">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">ID</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">닉네임</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">한마디</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">공감</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">작성 일시</th>
+                                <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comment-table-body" class="divide-y divide-gray-200 bg-white">
+                            <tr><td colspan="6" class="py-4 text-center text-sm text-gray-500">데이터를 불러오는 중입니다...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const loginView = document.getElementById('login-view');
+        const dashboardView = document.getElementById('dashboard-view');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const faqForm = document.getElementById('faq-form');
+        const faqFormError = document.getElementById('faq-form-error');
+
+        function getToken() {
+            return localStorage.getItem('adminToken');
+        }
+
+        function showPanel(name) {
+            document.querySelectorAll('.admin-panel').forEach((el) => el.classList.add('hidden-view'));
+            document.getElementById(`panel-${name}`).classList.remove('hidden-view');
+            document.querySelectorAll('.admin-nav-btn').forEach((btn) => {
+                btn.classList.toggle('is-active', btn.dataset.panel === name);
+            });
+        }
+
+        document.querySelectorAll('.admin-nav-btn').forEach((btn) => {
+            btn.addEventListener('click', () => showPanel(btn.dataset.panel));
+        });
+
+        function checkAuth() {
+            const token = getToken();
+            if (token) {
+                loginView.classList.add('hidden-view');
+                dashboardView.classList.remove('hidden-view');
+                showPanel('signatures');
+                fetchSignatures(token);
+                fetchFaq(token);
+                fetchComments(token);
+            } else {
+                dashboardView.classList.add('hidden-view');
+                loginView.classList.remove('hidden-view');
+            }
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('admin-id').value;
+            const password = document.getElementById('admin-pw').value;
+
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    localStorage.setItem('adminToken', data.token);
+                    loginError.classList.add('hidden-view');
+                    checkAuth();
+                } else {
+                    loginError.textContent = data.error || '로그인에 실패했습니다.';
+                    loginError.classList.remove('hidden-view');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                loginError.textContent = '서버 통신 오류가 발생했습니다.';
+                loginError.classList.remove('hidden-view');
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('adminToken');
+            checkAuth();
+        }
+
+        function handleUnauthorized(response) {
+            if (response.status === 401) {
+                logout();
+                alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+                return true;
+            }
+            return false;
+        }
+
+        async function fetchSignatures(token) {
+            try {
+                const response = await fetch('/api/signatures', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (handleUnauthorized(response)) return;
+                if (!response.ok) throw new Error('Failed to fetch data');
+                const data = await response.json();
+
+                const tbody = document.getElementById('signature-table-body');
+                tbody.innerHTML = '';
+
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-sm text-gray-500">아직 서명한 사람이 없습니다.</td></tr>';
+                } else {
+                    data.forEach((sig) => {
+                        const date = new Date(sig.created_at).toLocaleString('ko-KR');
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">${sig.id}</td>
+                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-700"></td>
+                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"></td>
+                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">${date}</td>
+                            <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
+                                <button type="button" data-id="${sig.id}" class="text-red-500 hover:text-red-700 font-bold delete-sig-btn">삭제</button>
+                            </td>
+                        `;
+                        tr.children[1].textContent = sig.name;
+                        tr.children[2].textContent = sig.email || '-';
+                        tbody.appendChild(tr);
+                    });
+                    tbody.querySelectorAll('.delete-sig-btn').forEach((btn) => {
+                        btn.addEventListener('click', () => deleteSignature(btn.dataset.id, token));
+                    });
+                }
+
+                document.getElementById('total-count').textContent = `총 서명자: ${data.length}명`;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('signature-table-body').innerHTML =
+                    '<tr><td colspan="5" class="py-4 text-center text-sm text-red-500">데이터를 불러오는데 실패했습니다.</td></tr>';
+            }
+        }
+
+        async function deleteSignature(id, token) {
+            if (!confirm('이 서명을 삭제할까요?')) return;
+            try {
+                const response = await fetch(`/api/signatures/${id}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (handleUnauthorized(response)) return;
+                if (!response.ok) throw new Error('Delete failed');
+                fetchSignatures(token);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('서명 삭제에 실패했습니다.');
+            }
+        }
+
+        async function fetchFaq(token) {
+            try {
+                const response = await fetch('/api/admin/faq', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (handleUnauthorized(response)) return;
+                if (!response.ok) throw new Error('Failed to fetch FAQ');
+                const data = await response.json();
+
+                const cats = [...new Set(data.map((item) => item.category).filter(Boolean))];
+                document.getElementById('faq-category-list').innerHTML = cats
+                    .map((cat) => `<option value="${String(cat).replace(/"/g, '&quot;')}"></option>`)
+                    .join('');
+
+                const tbody = document.getElementById('faq-table-body');
+                tbody.innerHTML = '';
+
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-sm text-gray-500">등록된 FAQ가 없습니다.</td></tr>';
+                } else {
+                    data.forEach((item) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 align-top">${item.id}</td>
+                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-700 align-top"></td>
+                            <td class="px-3 py-4 text-sm text-gray-700 align-top">
+                                <div class="font-bold text-gray-900 mb-1"></div>
+                                <div class="text-gray-600 whitespace-pre-line break-keep"></div>
+                            </td>
+                            <td class="whitespace-nowrap px-3 py-4 text-sm text-right align-top">
+                                <button type="button" data-id="${item.id}" class="text-red-500 hover:text-red-700 font-bold delete-faq-btn">삭제</button>
+                            </td>
+                        `;
+                        tr.children[1].textContent = item.category || '-';
+                        tr.children[2].children[0].textContent = item.question || '';
+                        tr.children[2].children[1].textContent = item.answer || '';
+                        tbody.appendChild(tr);
+                    });
+                    tbody.querySelectorAll('.delete-faq-btn').forEach((btn) => {
+                        btn.addEventListener('click', () => deleteFaq(btn.dataset.id, token));
+                    });
+                }
+
+                document.getElementById('faq-total-count').textContent = `총 FAQ: ${data.length}개`;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('faq-table-body').innerHTML =
+                    '<tr><td colspan="4" class="py-4 text-center text-sm text-red-500">FAQ를 불러오는데 실패했습니다.</td></tr>';
+            }
+        }
+
+        faqForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = getToken();
+            if (!token) return logout();
+
+            faqFormError.classList.add('hidden-view');
+            const payload = {
+                category: document.getElementById('faq-category').value.trim(),
+                question: document.getElementById('faq-question').value.trim(),
+                answer: document.getElementById('faq-answer').value.trim()
+            };
+
+            try {
+                const response = await fetch('/api/admin/faq', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json().catch(() => ({}));
+                if (handleUnauthorized(response)) return;
+                if (!response.ok) {
+                    faqFormError.textContent = data.error || 'FAQ 추가에 실패했습니다.';
+                    faqFormError.classList.remove('hidden-view');
+                    return;
+                }
+                faqForm.reset();
+                fetchFaq(token);
+                alert('FAQ가 추가되었습니다.');
+            } catch (error) {
+                console.error('Error:', error);
+                faqFormError.textContent = '서버 통신 오류가 발생했습니다.';
+                faqFormError.classList.remove('hidden-view');
+            }
+        });
+
+        async function deleteFaq(id, token) {
+            if (!confirm('이 FAQ를 삭제할까요?')) return;
+            try {
+                const response = await fetch(`/api/admin/faq/${id}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (handleUnauthorized(response)) return;
+                if (!response.ok) throw new Error('Delete failed');
+                fetchFaq(token);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('FAQ 삭제에 실패했습니다.');
+            }
+        }
+
+        async function fetchComments(token) {
+            try {
+                const response = await fetch('/api/comments?limit=100', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch comments');
+                const data = await response.json();
+                const tbody = document.getElementById('comment-table-body');
+                tbody.innerHTML = '';
+
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-sm text-gray-500">아직 지지 한마디가 없습니다.</td></tr>';
+                } else {
+                    data.forEach((item) => {
+                        const date = new Date(item.created_at).toLocaleString('ko-KR');
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">${item.id}</td>
+                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"></td>
+                            <td class="px-3 py-4 text-sm text-gray-700"></td>
+                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">${Number(item.likes) || 0}</td>
+                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">${date}</td>
+                            <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
+                                <button type="button" data-id="${item.id}" class="text-red-500 hover:text-red-700 font-bold delete-comment-btn">삭제</button>
+                            </td>
+                        `;
+                        tr.children[1].textContent = item.name;
+                        tr.children[2].textContent = item.message;
+                        tbody.appendChild(tr);
+                    });
+                    tbody.querySelectorAll('.delete-comment-btn').forEach((btn) => {
+                        btn.addEventListener('click', () => deleteComment(btn.dataset.id, token));
+                    });
+                }
+
+                document.getElementById('comment-total-count').textContent = `총 댓글: ${data.length}개`;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('comment-table-body').innerHTML =
+                    '<tr><td colspan="6" class="py-4 text-center text-sm text-red-500">댓글을 불러오는데 실패했습니다.</td></tr>';
+            }
+        }
+
+        async function deleteComment(id, token) {
+            if (!confirm('이 지지 한마디를 삭제할까요?')) return;
+            try {
+                const response = await fetch(`/api/comments/${id}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (handleUnauthorized(response)) return;
+                if (!response.ok) throw new Error('Delete failed');
+                fetchComments(token);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('삭제에 실패했습니다.');
+            }
+        }
+
+        window.onload = checkAuth;
+    </script>
+</body>
+</html>
