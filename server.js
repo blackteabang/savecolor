@@ -33,7 +33,7 @@ const FAQ_CATEGORY_MAX = 20;
 const ADMIN_ID = process.env.ADMIN_ID || 'admin';
 const ADMIN_PW = process.env.ADMIN_PW || 'smartsave!';
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'secret-admin-token-123';
-const BASE_SIGNATURES = Number(process.env.BASE_SIGNATURES) || 8421;
+const BASE_SIGNATURES = Number(process.env.BASE_SIGNATURES) || 50;
 
 async function ensureSchema() {
     await pool.query(`
