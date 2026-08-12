@@ -727,6 +727,59 @@
         const assetUrl = (path) => `${SITE_BASE}/${String(path).replace(/^\//, '')}`;
         const apiUrl = (path) => `${API_BASE}${path}`;
 
+        // GitHub Pages처럼 쓰기 API가 없는 환경에서는 브라우저에만 임시 저장합니다.
+        const LOCAL_KEYS = { signatures: 'dareum-local-signatures', comments: 'dareum-local-comments' };
+        const LOCAL_LIKES_KEY = 'dareum-local-likes';
+        const STATIC_NOTICE = '\n\n※ 현재 페이지는 서버 없이 동작하는 공개 데모라, 입력하신 내용은 이 브라우저에만 임시로 저장됩니다.';
+        let apiAvailable = null;
+
+        async function isApiAvailable() {
+            if (apiAvailable !== null) return apiAvailable;
+            try {
+                const response = await fetch(apiUrl('/api/signatures/count'), { cache: 'no-store' });
+                apiAvailable = response.ok;
+            } catch (error) {
+                apiAvailable = false;
+            }
+            return apiAvailable;
+        }
+
+        function readLocal(key) {
+            try {
+                const raw = localStorage.getItem(LOCAL_KEYS[key]);
+                const parsed = raw ? JSON.parse(raw) : [];
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function writeLocal(key, rows) {
+            try {
+                localStorage.setItem(LOCAL_KEYS[key], JSON.stringify(rows));
+            } catch (error) {
+                console.error('Failed to save locally:', error);
+            }
+        }
+
+        function readLocalLikes() {
+            try {
+                const raw = localStorage.getItem(LOCAL_LIKES_KEY);
+                const parsed = raw ? JSON.parse(raw) : {};
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch (error) {
+                return {};
+            }
+        }
+
+        function writeLocalLikes(map) {
+            try {
+                localStorage.setItem(LOCAL_LIKES_KEY, JSON.stringify(map));
+            } catch (error) {
+                console.error('Failed to save likes locally:', error);
+            }
+        }
+
         // --- [Canvas Simulation Logic] ---
         const canvas = document.getElementById('simCanvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -883,6 +936,20 @@
             if(!name) { alert('성함을 입력해주세요.'); return; }
             if(!agreed) { alert('개인정보 수집 및 이용에 동의해주세요.'); return; }
 
+            if (!(await isApiAvailable())) {
+                const rows = readLocal('signatures');
+                if (email && rows.some((row) => row.email === email)) {
+                    alert('이미 서명에 참여한 이메일입니다.');
+                    return;
+                }
+                rows.push({ name, email: email || null, agreed, created_at: new Date().toISOString() });
+                writeLocal('signatures', rows);
+                signatureCount += 1;
+                updateProgress();
+                alert(`${name}님, 소중한 지지 서명 감사합니다!${STATIC_NOTICE}`);
+                return;
+            }
+
             try {
                 const response = await fetch(`${API_BASE}/api/signatures`, {
                     method: 'POST',
@@ -958,7 +1025,7 @@
                 const signatures = await sigRes.json();
                 const base = Number(meta.baseSignatures) || 8421;
                 const extra = Array.isArray(signatures) ? signatures.length : 0;
-                signatureCount = base + extra;
+                signatureCount = base + extra + readLocal('signatures').length;
                 updateProgress();
             } catch (error) {
                 console.error('Failed to fetch count from JSON:', error);
@@ -1222,6 +1289,23 @@
 
         async function handleLike(id, buttonEl) {
             if (hasLiked(id)) return;
+
+            if (String(id).startsWith('local-') || !(await isApiAvailable())) {
+                const rows = readLocal('comments');
+                const target = rows.find((row) => String(row.id) === String(id));
+                if (target) {
+                    target.likes = (Number(target.likes) || 0) + 1;
+                    writeLocal('comments', rows);
+                } else {
+                    const likes = readLocalLikes();
+                    likes[id] = (Number(likes[id]) || 0) + 1;
+                    writeLocalLikes(likes);
+                }
+                markLiked(id);
+                await loadComments();
+                return;
+            }
+
             try {
                 const response = await fetch(`${API_BASE}/api/comments/${id}/like`, { method: 'POST' });
                 const data = await response.json();
@@ -1244,12 +1328,24 @@
                     const response = await fetch(`${API_BASE}/api/comments`);
                     if (response.ok) data = await response.json();
                 } catch (_) { /* Pages 등 API 없는 환경 */ }
+                let fromApi = true;
                 if (!Array.isArray(data)) {
+                    fromApi = false;
                     const fileRes = await fetch(assetUrl('data/comments.json'));
                     if (!fileRes.ok) throw new Error('Failed to load comments');
                     data = await fileRes.json();
                 }
-                renderComments(Array.isArray(data) ? data : []);
+
+                let items = Array.isArray(data) ? data : [];
+                if (!fromApi) {
+                    const likes = readLocalLikes();
+                    items = items.map((item) => ({
+                        ...item,
+                        likes: (Number(item.likes) || 0) + (Number(likes[item.id]) || 0)
+                    }));
+                    items = [...items, ...readLocal('comments')];
+                }
+                renderComments(items);
             } catch (error) {
                 console.error('Failed to load comments:', error);
                 const empty = document.getElementById('comment-empty');
@@ -1272,6 +1368,22 @@
             }
             if (message.length > COMMENT_MAX_LEN) {
                 alert(`지지 한마디는 ${COMMENT_MAX_LEN}자 이내로 작성해주세요.`);
+                return false;
+            }
+
+            if (!(await isApiAvailable())) {
+                const rows = readLocal('comments');
+                rows.push({
+                    id: `local-${Date.now()}`,
+                    name,
+                    message,
+                    likes: 0,
+                    created_at: new Date().toISOString()
+                });
+                writeLocal('comments', rows);
+                resetCommentForm();
+                await loadComments();
+                alert(`지지 한마디가 등록되었습니다.${STATIC_NOTICE}`);
                 return false;
             }
 
