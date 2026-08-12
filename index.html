@@ -715,8 +715,17 @@
         // --- [State Management] ---
         let currentFilter = 'normal';
         let signatureCount = 8421;
-        const API_BASE = '';
+        // GitHub Pages(프로젝트 사이트)에서는 /savecolor 같은 base path가 필요합니다.
+        const SITE_BASE = (() => {
+            if (!location.hostname.endsWith('github.io')) return '';
+            const part = location.pathname.split('/').filter(Boolean)[0];
+            return part ? `/${part}` : '';
+        })();
+        // 외부에 Express API를 따로 올렸다면 window.API_BASE에 URL을 넣으세요.
+        const API_BASE = (typeof window.API_BASE === 'string' ? window.API_BASE : '').replace(/\/$/, '');
         const COMMENT_MAX_LEN = 80;
+        const assetUrl = (path) => `${SITE_BASE}/${String(path).replace(/^\//, '')}`;
+        const apiUrl = (path) => `${API_BASE}${path}`;
 
         // --- [Canvas Simulation Logic] ---
         const canvas = document.getElementById('simCanvas');
@@ -996,9 +1005,16 @@
         async function loadFaq() {
             const list = document.getElementById('faq-list');
             try {
-                const response = await fetch('/api/faq');
-                if (!response.ok) throw new Error('FAQ load failed');
-                const items = await response.json();
+                let items = null;
+                try {
+                    const apiRes = await fetch(apiUrl('/api/faq'));
+                    if (apiRes.ok) items = await apiRes.json();
+                } catch (_) { /* GitHub Pages 등 API 없는 환경 */ }
+                if (!Array.isArray(items)) {
+                    const fileRes = await fetch(assetUrl('faq.json'));
+                    if (!fileRes.ok) throw new Error('FAQ load failed');
+                    items = await fileRes.json();
+                }
                 if (!Array.isArray(items) || items.length === 0) {
                     list.innerHTML = '<p class="text-center text-gray-500 py-8 text-sm">등록된 질문이 없습니다.</p>';
                     return;
