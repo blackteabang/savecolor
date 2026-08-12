@@ -22,7 +22,7 @@
 
 | Type | Name | Target | Proxy |
 |------|------|--------|-------|
-| CNAME | `savecolor` | `abfac7bc-015e-425a-a4a4-e64f3395f282.cfargotunnel.com` | Proxied (주황 구름) |
+| CNAME | `savecolor` | `a79eadcb-7df0-4d69-bb73-5157ab862769.cfargotunnel.com` | Proxied (주황 구름) |
 
 추가 후 https://savecolor.jashin.org 로 접속하면 됩니다.
 

@@ -1,7 +1,7 @@
 {
   "name": "savecolor",
   "version": "1.0.0",
-  "description": "다름색 웹사이트 - JSON 파일 저장소 + Express",
+  "description": "다름색 웹사이트 - Express + MySQL",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -14,6 +14,7 @@
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "mysql2": "^3.22.5"
   }
 }
